@@ -87,9 +87,12 @@ fn main() -> Result<()> {
 
     let parser = expr::ExprParser::new();
     loop {
-        let readline = rl.readline(">> ");
-        match readline {
+        match rl.readline(">> ") {
             Ok(line) => {
+                if line.trim().is_empty() {
+                    continue;
+                }
+
                 rl.add_history_entry(line.as_str());
                 match parser.parse(Bridge::new(line.as_str())) {
                     Ok(result) => println!("{}", result),
