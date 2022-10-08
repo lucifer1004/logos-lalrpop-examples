@@ -1,0 +1,74 @@
+use lalrpop_util::ParseError;
+use crate::{Token, WrappedInt};
+
+grammar;
+
+extern {
+    type Location = usize;
+    type Error = String;
+    enum Token {
+        "(" => Token::LParen,
+        ")" => Token::RParen,
+        "+" => Token::Plus,
+        "-" => Token::Minus,
+        "*" => Token::Star,
+        "/" => Token::Slash,
+        Int => Token::Integer(_),
+    }
+}
+
+pub Expr: i64 = {
+    <l:Expr> "+" <r:Factor> =>? match l.checked_add(r) {
+        Some(v) => Ok(v),
+        None => Err(ParseError::User {
+            error: format!("{} + {} overflows", l, r),
+        }),
+    },
+    <l:Expr> "-" <r:Factor> =>? match l.checked_sub(r) {
+        Some(v) => Ok(v),
+        None => Err(ParseError::User {
+            error: format!("{} - {} overflows", l, r),
+        }),
+    },
+    Factor,
+};
+
+Factor: i64 = {
+    <l:Factor> "*" <r:Unary> =>? match l.checked_mul(r) {
+        Some(v) => Ok(v),
+        None => Err(ParseError::User {
+            error: format!("{} * {} overflows", l, r),
+        }),
+    },
+    <l:Factor> "/" <r:Unary> =>? match l.checked_div(r) {
+        Some(v) => Ok(v),
+        None => Err(ParseError::User {
+            error: match r {
+                0 => "division by zero".to_string(),
+                _ => format!("{} / {} overflows", l, r),
+            }
+        }),
+    },
+    Unary,
+};
+
+Unary: i64 = {
+    "+" <e:Unary> => e,
+    "-" <e:Unary> => -e,
+    Term,
+};
+
+Term: i64 = {
+    Num,
+    "(" <Expr> ")",
+};
+
+Num: i64 = {
+    <i:Int> =>? match i {
+        Token::Integer(WrappedInt::Int(i)) => Ok(i),
+        Token::Integer(WrappedInt::Err(e)) => Err(ParseError::User {
+            error: e.to_string(),
+        }),
+        _ => unreachable!(),
+    },
+};

@@ -1,0 +1,12 @@
+[package]
+edition = "2021"
+name = "logos-lalrpop-examples"
+version = "0.1.0"
+
+[dependencies]
+lalrpop-util = "0.19"
+logos = "0.12"
+rustyline = "10"
+
+[build-dependencies]
+lalrpop = "0.19"
